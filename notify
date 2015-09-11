@@ -1,0 +1,44 @@
+#!/bin/bash
+
+kernel=$(uname)
+
+if [[ "$kernel" != "Darwin" ]] ; then
+  linux="yes"
+fi
+
+work_out_seconds(){
+case $2 in
+  s)
+    echo $1
+    ;;
+  m)
+    echo "$(($1 * 60))"
+    ;;
+  h)
+    echo "$(($1 * 3600))"
+    ;;
+  d)
+    echo "$(($1 * 86400))"
+    ;;
+  *)
+    echo "Unit not understood, try (s)econd, (m)inute, (h)our or (d)ay"
+    ;;
+  esac
+}
+
+time_input=$1
+task_input=${*:2}
+time_number=$(echo $time_input | sed 's/[A-Za-z]//g')
+time_unit=$(echo $time_input | sed 's/[0-9]//g')
+[ "$time_unit" ] && time_number=$(work_out_seconds $time_number $time_unit)
+
+if [ "$linux" == "yes" ]  ; then
+  (sleep $time_number && notify-send "$task_input")&
+else
+(sleep $time_number &&
+/usr/bin/osascript << EOF
+set task_input to do shell script "echo '$task_input'"
+display notification task_input with title "Notifier"
+EOF
+)&
+fi
